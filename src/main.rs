@@ -1,12 +1,21 @@
 mod commander;
 mod input;
+mod lua;
 mod storage;
 
-use input::run;
+use lua::LuaBridge;
 use storage::Storage;
 
 fn main() {
     let mut storage = Storage::new();
 
-    run(&mut storage);
+    let _lua = match LuaBridge::new() {
+        Ok(lua) => lua,
+        Err(error) => {
+            println!("ERRO: {}", error);
+            return;
+        }
+    };
+
+    input::run(&mut storage);
 }
