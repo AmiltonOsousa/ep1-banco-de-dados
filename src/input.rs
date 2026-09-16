@@ -14,7 +14,11 @@ pub fn run(
 
     loop {
         print!("> ");
-        stdout.flush().unwrap();
+
+        if let Err(error) = stdout.flush() {
+            println!("ERRO: falha ao exibir prompt: {}", error);
+            break;
+        }
 
         let mut line = String::new();
 

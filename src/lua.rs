@@ -53,6 +53,35 @@ impl LuaBridge {
         db.set("get", get)
             .map_err(|error| format!("erro ao registrar db.get: {}", error))?;
 
+        let storage_clone = Arc::clone(&storage);
+
+        let find_by_value = lua
+            .create_function(
+                move |_, (value, ignored_key): (String, Option<String>)| {
+                    let storage = storage_clone.lock().map_err(|_| {
+                        mlua::Error::RuntimeError(
+                            "erro ao acessar banco de dados".to_string(),
+                        )
+                    })?;
+
+                    Ok(storage.find_key_by_value(
+                        &value,
+                        ignored_key.as_deref(),
+                    ))
+                },
+            )
+            .map_err(|error| {
+                format!("erro ao criar db.find_by_value: {}", error)
+            })?;
+
+        db.set("find_by_value", find_by_value)
+            .map_err(|error| {
+                format!(
+                    "erro ao registrar db.find_by_value: {}",
+                    error
+                )
+            })?;
+
         globals
             .set("db", db)
             .map_err(|error| format!("erro ao registrar objeto db: {}", error))?;

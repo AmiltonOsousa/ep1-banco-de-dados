@@ -1,0 +1,21 @@
+ADD nome Amilton
+GET nome
+ADD cpf_cliente 52998224725
+GET cpf_cliente
+ADD cpf_invalido 12345678900
+GET cpf_invalido
+ADD cpf_repetido 11111111111
+ADD cpf_outro 52998224725
+ADD data_valida 2024-02-29
+GET data_valida
+ADD data_invalida 2023-02-29
+ADD data_invalida2 2024-04-31
+ADD data_invalida3 2024-13-01
+ADD ip_servidor 192.168.1.10
+GET ip_servidor
+ADD ip_publico 8.8.8.8
+GET ip_publico
+ADD ip_invalido 192.168.1.300
+GET inexistente
+TEST qualquer
+EXIT

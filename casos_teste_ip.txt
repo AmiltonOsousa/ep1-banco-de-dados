@@ -1,0 +1,12 @@
+ADD ip_local1 10.0.0.1
+GET ip_local1
+ADD ip_local2 172.16.0.1
+GET ip_local2
+ADD ip_local3 192.168.0.1
+GET ip_local3
+ADD ip_publico 8.8.8.8
+GET ip_publico
+ADD ip_invalido 256.1.1.1
+ADD ip_invalido2 192.168.1
+ADD ip_invalido3 192.168.1.1.1
+EXIT
