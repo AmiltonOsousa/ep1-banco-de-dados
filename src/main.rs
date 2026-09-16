@@ -3,13 +3,15 @@ mod input;
 mod lua;
 mod storage;
 
+use std::sync::{Arc, Mutex};
+
 use lua::LuaBridge;
 use storage::Storage;
 
 fn main() {
-    let mut storage = Storage::new();
+    let storage = Arc::new(Mutex::new(Storage::new()));
 
-    let _lua = match LuaBridge::new() {
+    let _lua = match LuaBridge::new(Arc::clone(&storage)) {
         Ok(lua) => lua,
         Err(error) => {
             println!("ERRO: {}", error);
@@ -17,5 +19,5 @@ fn main() {
         }
     };
 
-    input::run(&mut storage);
+    input::run(storage);
 }

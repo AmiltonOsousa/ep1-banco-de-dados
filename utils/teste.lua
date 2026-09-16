@@ -9,9 +9,18 @@ return {
     end,
 
     get = function(key, value)
+        local existente = db.get("nome")
+
+        if existente == nil then
+            return {
+                ok = false,
+                error = "chave nome não encontrada"
+            }
+        end
+
         return {
             ok = true,
-            value = value
+            value = existente
         }
     end
 }

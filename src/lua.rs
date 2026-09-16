@@ -1,21 +1,63 @@
 use std::fs;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use mlua::{Function, Lua, Table};
+
+use crate::storage::Storage;
 
 pub struct LuaBridge {
     lua: Lua,
 }
 
 impl LuaBridge {
-    pub fn new() -> Result<Self, String> {
+    pub fn new(storage: Arc<Mutex<Storage>>) -> Result<Self, String> {
         let lua = Lua::new();
+
+        Self::register_database_query(&lua, storage)?;
 
         let bridge = Self { lua };
 
         bridge.load_extensions("utils")?;
 
         Ok(bridge)
+    }
+
+    fn register_database_query(
+        lua: &Lua,
+        storage: Arc<Mutex<Storage>>,
+    ) -> Result<(), String> {
+        let globals = lua.globals();
+
+        let db = lua
+            .create_table()
+            .map_err(|error| format!("erro ao criar objeto db: {}", error))?;
+
+        let storage_clone = Arc::clone(&storage);
+
+        let get = lua
+            .create_function(move |_, key: String| {
+                let storage = storage_clone
+                    .lock()
+                    .map_err(|_| mlua::Error::RuntimeError(
+                        "erro ao acessar banco de dados".to_string()
+                    ))?;
+
+                match storage.get(&key) {
+                    Some(value) => Ok(Some(value.clone())),
+                    None => Ok(None),
+                }
+            })
+            .map_err(|error| format!("erro ao criar db.get: {}", error))?;
+
+        db.set("get", get)
+            .map_err(|error| format!("erro ao registrar db.get: {}", error))?;
+
+        globals
+            .set("db", db)
+            .map_err(|error| format!("erro ao registrar objeto db: {}", error))?;
+
+        Ok(())
     }
 
     fn load_extensions(&self, directory: &str) -> Result<(), String> {
