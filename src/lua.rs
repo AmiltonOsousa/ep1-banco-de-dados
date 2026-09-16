@@ -6,6 +6,12 @@ use mlua::{Function, Lua, Table};
 
 use crate::storage::Storage;
 
+struct ExtensionResult {
+    ok: bool,
+    value: Option<String>,
+    error: Option<String>,
+}
+
 pub struct LuaBridge {
     lua: Lua,
 }
@@ -76,10 +82,7 @@ impl LuaBridge {
 
         db.set("find_by_value", find_by_value)
             .map_err(|error| {
-                format!(
-                    "erro ao registrar db.find_by_value: {}",
-                    error
-                )
+                format!("erro ao registrar db.find_by_value: {}", error)
             })?;
 
         globals
@@ -87,6 +90,34 @@ impl LuaBridge {
             .map_err(|error| format!("erro ao registrar objeto db: {}", error))?;
 
         Ok(())
+    }
+
+    fn read_extension_result(
+        result: Table,
+    ) -> Result<ExtensionResult, String> {
+        let ok: bool = result
+            .get("ok")
+            .map_err(|error| {
+                format!("resultado da extensão inválido: {}", error)
+            })?;
+
+        let value: Option<String> = result
+            .get("value")
+            .map_err(|error| {
+                format!("resultado da extensão inválido: {}", error)
+            })?;
+
+        let error: Option<String> = result
+            .get("error")
+            .map_err(|error| {
+                format!("resultado da extensão inválido: {}", error)
+            })?;
+
+        Ok(ExtensionResult {
+            ok,
+            value,
+            error,
+        })
     }
 
     pub fn add(
@@ -118,29 +149,21 @@ impl LuaBridge {
                 format!("erro na extensão ADD: {}", error)
             })?;
 
-        let ok: bool = result
-            .get("ok")
-            .map_err(|error| {
-                format!("resultado ADD inválido: {}", error)
-            })?;
+        let result = Self::read_extension_result(result)?;
 
-        if !ok {
-            let error: String = result
-                .get("error")
-                .unwrap_or_else(|_| {
-                    "valor rejeitado pela extensão".to_string()
-                });
-
-            return Err(error);
+        if !result.ok {
+            return Err(
+                result
+                    .error
+                    .unwrap_or_else(|| {
+                        "valor rejeitado pela extensão".to_string()
+                    }),
+            );
         }
 
-        let transformed: String = result
-            .get("value")
-            .map_err(|error| {
-                format!("resultado ADD inválido: {}", error)
-            })?;
-
-        Ok(transformed)
+        result
+            .value
+            .ok_or_else(|| "resultado ADD sem valor".to_string())
     }
 
     pub fn get(
@@ -172,29 +195,21 @@ impl LuaBridge {
                 format!("erro na extensão GET: {}", error)
             })?;
 
-        let ok: bool = result
-            .get("ok")
-            .map_err(|error| {
-                format!("resultado GET inválido: {}", error)
-            })?;
+        let result = Self::read_extension_result(result)?;
 
-        if !ok {
-            let error: String = result
-                .get("error")
-                .unwrap_or_else(|_| {
-                    "erro na extensão".to_string()
-                });
-
-            return Err(error);
+        if !result.ok {
+            return Err(
+                result
+                    .error
+                    .unwrap_or_else(|| {
+                        "erro na extensão".to_string()
+                    }),
+            );
         }
 
-        let transformed: String = result
-            .get("value")
-            .map_err(|error| {
-                format!("resultado GET inválido: {}", error)
-            })?;
-
-        Ok(transformed)
+        result
+            .value
+            .ok_or_else(|| "resultado GET sem valor".to_string())
     }
 
     fn find_extension(
